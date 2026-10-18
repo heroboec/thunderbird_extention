@@ -1,3 +1,6 @@
+import { buildThreadText, collectList } from "./lib/messages.js";
+import { expandThreads } from "./lib/thread.js";
+
 // Thunderbird found a newer version via update_url. By default it would wait
 // for a restart; reloading applies the update right away.
 browser.runtime.onUpdateAvailable.addListener((details) => {
@@ -6,6 +9,7 @@ browser.runtime.onUpdateAvailable.addListener((details) => {
 });
 
 const VIEWER_MENU_ID = "show-text";
+const THREAD_BLOCK_SCRIPT_ID = "thread-block";
 
 browser.runtime.onInstalled.addListener(() => {
   browser.menus.create({
@@ -13,6 +17,28 @@ browser.runtime.onInstalled.addListener(() => {
     title: "Показать текст писем",
     contexts: ["message_list"],
   });
+});
+
+// Registered message display scripts don't survive a restart, so register
+// on every background start unless still registered.
+async function registerThreadBlock() {
+  const registered = await browser.scripting.messageDisplay.getRegisteredScripts({ ids: [THREAD_BLOCK_SCRIPT_ID] });
+  if (registered.length) return;
+  await browser.scripting.messageDisplay.registerScripts([
+    { id: THREAD_BLOCK_SCRIPT_ID, js: ["display/thread-block.js"] },
+  ]);
+}
+registerThreadBlock();
+
+// Thread text for the message shown in the tab the request came from.
+async function threadTextForTab(tabId) {
+  const displayed = await collectList(browser.messageDisplay.getDisplayedMessages(tabId));
+  const messages = await expandThreads(displayed);
+  return { count: messages.length, text: messages.length ? await buildThreadText(messages) : "" };
+}
+
+browser.runtime.onMessage.addListener((request, sender) => {
+  if (request?.type === "getThreadText") return threadTextForTab(sender.tab.id);
 });
 
 // Opens the debug window with the text of selected messages, or focuses it

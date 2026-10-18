@@ -13,7 +13,8 @@
     "storage",
     "messagesRead",
     "accountsRead",
-    "menus"
+    "menus",
+    "scripting"
   ],
   "optional_host_permissions": [
     "*://*/*"
@@ -21,7 +22,8 @@
   "background": {
     "scripts": [
       "background.js"
-    ]
+    ],
+    "type": "module"
   },
   "action": {
     "default_title": "Текст писем",
