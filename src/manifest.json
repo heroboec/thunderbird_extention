@@ -12,6 +12,7 @@
   "permissions": [
     "storage",
     "messagesRead",
+    "accountsRead",
     "menus"
   ],
   "optional_host_permissions": [

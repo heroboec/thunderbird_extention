@@ -1,15 +1,20 @@
 // Collecting text of the messages selected in a mail tab.
 
-// Selected messages of a mail tab; a selected collapsed thread includes all
-// of its messages.
-export async function getSelectedMessages(tabId) {
-  let page = await browser.mailTabs.getSelectedMessages(tabId);
+// All messages of a paginated MessageList.
+export async function collectList(listPromise) {
+  let page = await listPromise;
   const messages = [...page.messages];
   while (page.id) {
     page = await browser.messages.continueList(page.id);
     messages.push(...page.messages);
   }
   return messages;
+}
+
+// Selected messages of a mail tab; a selected collapsed thread includes all
+// of its messages.
+export function getSelectedMessages(tabId) {
+  return collectList(browser.mailTabs.getSelectedMessages(tabId));
 }
 
 // Plain text body of a message. Prefers text/plain parts, falls back to
