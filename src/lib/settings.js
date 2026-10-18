@@ -2,6 +2,7 @@
 // Thunderbird profile, never synced).
 
 export const DEFAULTS = {
+  domain: "",
   baseUrl: "",
   apiKey: "",
   model: "",

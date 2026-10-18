@@ -3,6 +3,7 @@ import { loadSettings, normalizeBaseUrl, originPattern, saveSettings } from "../
 
 const form = document.getElementById("settings");
 const fields = {
+  domain: document.getElementById("domain"),
   baseUrl: document.getElementById("baseUrl"),
   apiKey: document.getElementById("apiKey"),
   model: document.getElementById("model"),
@@ -18,6 +19,7 @@ function showStatus(text, kind = "") {
 // Reads the form; throws with a user-facing message on invalid input.
 function readForm() {
   return {
+    domain: fields.domain.value.trim(),
     baseUrl: normalizeBaseUrl(fields.baseUrl.value),
     apiKey: fields.apiKey.value.trim(),
     model: fields.model.value.trim(),

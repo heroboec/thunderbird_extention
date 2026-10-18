@@ -6,7 +6,11 @@ body {
 
 h1 {
   font-size: 1.3em;
-  margin: 0 0 16px;
+  margin: 24px 0 8px;
+}
+
+h1:first-child {
+  margin-top: 0;
 }
 
 label {
