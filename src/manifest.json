@@ -9,7 +9,13 @@
       "strict_min_version": "128.0"
     }
   },
+  "permissions": ["storage"],
+  "optional_host_permissions": ["*://*/*"],
   "background": {
     "scripts": ["background.js"]
+  },
+  "options_ui": {
+    "page": "options/options.html",
+    "open_in_tab": false
   }
 }

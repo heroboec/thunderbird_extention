@@ -1,0 +1,35 @@
+<!doctype html>
+<html lang="ru">
+<head>
+  <meta charset="utf-8">
+  <link rel="stylesheet" href="options.css">
+  <script type="module" src="options.js"></script>
+</head>
+<body>
+  <form id="settings">
+    <h1>Подключение к нейросети</h1>
+
+    <label for="baseUrl">Адрес API</label>
+    <input id="baseUrl" name="baseUrl" type="text" required
+           placeholder="https://api.openai.com/v1" autocomplete="off" spellcheck="false">
+    <p class="hint">Адрес OpenAI-совместимого сервера, обычно заканчивается на <code>/v1</code>.</p>
+
+    <label for="apiKey">API-ключ</label>
+    <div class="row">
+      <input id="apiKey" name="apiKey" type="password" placeholder="sk-..." autocomplete="off" spellcheck="false">
+      <button type="button" id="toggleKey">Показать</button>
+    </div>
+
+    <label for="model">Модель</label>
+    <input id="model" name="model" type="text" list="models" placeholder="gpt-4o-mini" autocomplete="off" spellcheck="false">
+    <datalist id="models"></datalist>
+    <p class="hint">Нажмите «Проверить подключение», чтобы подгрузить список доступных моделей.</p>
+
+    <div class="actions">
+      <button type="submit">Сохранить</button>
+      <button type="button" id="test">Проверить подключение</button>
+    </div>
+    <p id="status" role="status"></p>
+  </form>
+</body>
+</html>

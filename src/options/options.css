@@ -1,0 +1,57 @@
+body {
+  font: message-box;
+  margin: 16px;
+  max-width: 560px;
+}
+
+h1 {
+  font-size: 1.3em;
+  margin: 0 0 16px;
+}
+
+label {
+  display: block;
+  font-weight: 600;
+  margin-top: 14px;
+  margin-bottom: 4px;
+}
+
+input {
+  box-sizing: border-box;
+  width: 100%;
+  padding: 6px 8px;
+}
+
+.row {
+  display: flex;
+  gap: 8px;
+}
+
+.row input {
+  flex: 1;
+}
+
+.hint {
+  color: GrayText;
+  font-size: 0.9em;
+  margin: 4px 0 0;
+}
+
+.actions {
+  display: flex;
+  gap: 8px;
+  margin-top: 20px;
+}
+
+#status {
+  min-height: 1.4em;
+  white-space: pre-wrap;
+}
+
+#status.ok {
+  color: #1a7f37;
+}
+
+#status.error {
+  color: #cf222e;
+}
