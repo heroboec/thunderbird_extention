@@ -14,6 +14,9 @@
 
     <h1>Подключение к нейросети</h1>
 
+    <label for="preset">Сервис</label>
+    <select id="preset"></select>
+
     <label for="baseUrl">Адрес API</label>
     <input id="baseUrl" name="baseUrl" type="text" required
            placeholder="https://api.openai.com/v1" autocomplete="off" spellcheck="false">
@@ -26,9 +29,9 @@
     </div>
 
     <label for="model">Модель</label>
-    <input id="model" name="model" type="text" list="models" placeholder="gpt-4o-mini" autocomplete="off" spellcheck="false">
+    <input id="model" name="model" type="text" list="models" autocomplete="off" spellcheck="false">
     <datalist id="models"></datalist>
-    <p class="hint">Нажмите «Проверить подключение», чтобы подгрузить список доступных моделей.</p>
+    <p class="hint">Нажмите «Проверить подключение», чтобы подгрузить список доступных моделей, затем выберите модель в этом поле.</p>
 
     <div class="actions">
       <button type="submit">Сохранить</button>

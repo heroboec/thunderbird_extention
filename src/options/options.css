@@ -20,7 +20,8 @@ label {
   margin-bottom: 4px;
 }
 
-input {
+input,
+select {
   box-sizing: border-box;
   width: 100%;
   padding: 6px 8px;

@@ -1,4 +1,5 @@
 import { listModels } from "../lib/api.js";
+import { findPreset, PRESETS } from "../lib/presets.js";
 import { loadSettings, normalizeBaseUrl, normalizeDomain, originPattern, saveSettings } from "../lib/settings.js";
 
 const form = document.getElementById("settings");
@@ -9,6 +10,19 @@ const fields = {
   model: document.getElementById("model"),
 };
 const modelList = document.getElementById("models");
+const preset = document.getElementById("preset");
+
+const CUSTOM = "custom";
+preset.append(
+  ...PRESETS.map((p) => new Option(p.name, p.baseUrl)),
+  new Option("Свой адрес", CUSTOM),
+);
+
+// Keeps the preset list in sync with a manually edited address.
+function syncPreset() {
+  preset.value = findPreset(fields.baseUrl.value.trim().replace(/\/+$/, ""))?.baseUrl ?? CUSTOM;
+}
+
 const status = document.getElementById("status");
 
 function showStatus(text, kind = "") {
@@ -45,6 +59,7 @@ async function save(event) {
   await saveSettings(settings);
   fields.domain.value = settings.domain;
   fields.baseUrl.value = settings.baseUrl;
+  syncPreset();
   showStatus(
     granted ? "Сохранено" : "Сохранено, но без доступа к серверу запросы к API работать не будут",
     granted ? "ok" : "error",
@@ -80,9 +95,19 @@ document.getElementById("toggleKey").addEventListener("click", (event) => {
   event.target.textContent = hidden ? "Скрыть" : "Показать";
 });
 document.getElementById("test").addEventListener("click", testConnection);
+preset.addEventListener("change", () => {
+  if (preset.value === CUSTOM) {
+    fields.baseUrl.focus();
+    return;
+  }
+  fields.baseUrl.value = preset.value;
+  modelList.replaceChildren();
+});
+fields.baseUrl.addEventListener("input", syncPreset);
 form.addEventListener("submit", save);
 
 const settings = await loadSettings();
 for (const [name, input] of Object.entries(fields)) {
   input.value = settings[name];
 }
+syncPreset();

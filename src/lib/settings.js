@@ -1,9 +1,11 @@
 // Extension settings stored in browser.storage.local (stays in the
 // Thunderbird profile, never synced).
 
+import { PRESETS } from "./presets.js";
+
 export const DEFAULTS = {
   domain: "",
-  baseUrl: "",
+  baseUrl: PRESETS[0].baseUrl,
   apiKey: "",
   model: "",
 };
