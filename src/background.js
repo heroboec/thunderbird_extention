@@ -1,5 +1,7 @@
-import { buildThreadText, collectList } from "./lib/messages.js";
-import { expandThreads } from "./lib/thread.js";
+import { pruneCache } from "./lib/cache.js";
+import { collectList } from "./lib/messages.js";
+import { loadSettings } from "./lib/settings.js";
+import { collectThreadText } from "./lib/thread.js";
 
 // Thunderbird found a newer version via update_url. By default it would wait
 // for a restart; reloading applies the update right away.
@@ -29,12 +31,14 @@ async function registerThreadBlock() {
   ]);
 }
 registerThreadBlock();
+pruneCache();
 
 // Thread text for the message shown in the tab the request came from.
 async function threadTextForTab(tabId) {
   const displayed = await collectList(browser.messageDisplay.getDisplayedMessages(tabId));
-  const messages = await expandThreads(displayed);
-  return { count: messages.length, text: messages.length ? await buildThreadText(messages) : "" };
+  const { domain } = await loadSettings();
+  const { messages, text } = await collectThreadText(displayed, domain);
+  return { count: messages.length, text };
 }
 
 browser.runtime.onMessage.addListener((request, sender) => {

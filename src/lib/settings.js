@@ -33,6 +33,22 @@ export function normalizeBaseUrl(input) {
   return url.href.replace(/\/+$/, "");
 }
 
+// Accepts "Company.ru", "@company.ru", "https://company.ru/path", etc.
+// Returns a bare lowercase domain, or "" for empty input.
+export function normalizeDomain(input) {
+  const value = input
+    .trim()
+    .toLowerCase()
+    .replace(/^[a-z]+:\/\//, "")
+    .replace(/^.*@/, "")
+    .replace(/[/:?#].*$/, "")
+    .replace(/\.$/, "");
+  if (value && !/^[\p{L}\p{N}-]+(\.[\p{L}\p{N}-]+)+$/u.test(value)) {
+    throw new Error(`Некорректный домен: ${input.trim()}`);
+  }
+  return value;
+}
+
 // Host permission pattern for the API server. Match patterns can't carry
 // a port, so "http://localhost:1234" becomes "http://localhost/*".
 export function originPattern(baseUrl) {

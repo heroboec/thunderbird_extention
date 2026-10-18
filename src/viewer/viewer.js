@@ -1,7 +1,8 @@
 // Debug window: shows the collected text of the messages selected in a mail
 // tab and follows selection changes.
-import { buildThreadText, getSelectedMessages } from "../lib/messages.js";
-import { expandThreads } from "../lib/thread.js";
+import { getSelectedMessages } from "../lib/messages.js";
+import { loadSettings } from "../lib/settings.js";
+import { collectThreadText } from "../lib/thread.js";
 
 const summary = document.getElementById("summary");
 const output = document.getElementById("text");
@@ -18,8 +19,8 @@ async function render(tabId) {
     const selected = await getSelectedMessages(tabId);
     if (id !== renderId) return;
     if (selected.length) summary.textContent = "Собираю цепочку…";
-    const messages = await expandThreads(selected);
-    const text = messages.length ? await buildThreadText(messages) : "";
+    const { domain } = await loadSettings();
+    const { messages, text } = await collectThreadText(selected, domain);
     if (id !== renderId) return;
     output.textContent = text;
     summary.textContent = messages.length

@@ -1,5 +1,7 @@
 // Collecting text of the messages selected in a mail tab.
 
+import { cached } from "./cache.js";
+
 // All messages of a paginated MessageList.
 export async function collectList(listPromise) {
   let page = await listPromise;
@@ -37,7 +39,10 @@ function formatDate(date) {
 // All messages as one text, oldest first, each with a short header.
 export async function buildThreadText(messages) {
   const sorted = [...messages].sort((a, b) => new Date(a.date) - new Date(b.date));
-  const bodies = await Promise.all(sorted.map((m) => getMessageText(m.id)));
+  // A headers-only message has no full body to cache yet.
+  const bodies = await Promise.all(
+    sorted.map((m) => cached("body", m.headersOnly ? null : m.headerMessageId, () => getMessageText(m.id))),
+  );
   return sorted
     .map((m, i) =>
       [

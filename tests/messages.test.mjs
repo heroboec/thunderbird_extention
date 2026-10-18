@@ -1,6 +1,7 @@
 import assert from "node:assert/strict";
 import { test } from "node:test";
 import { buildThreadText, getMessageText, getSelectedMessages } from "../src/lib/messages.js";
+import { fakeStorage } from "./fake-storage.mjs";
 
 const parts = {
   1: [{ contentType: "text/plain", content: "  Привет  " }],
@@ -8,6 +9,7 @@ const parts = {
 };
 
 globalThis.browser = {
+  storage: { local: fakeStorage() },
   mailTabs: {
     getSelectedMessages: async () => ({ id: "page2", messages: [{ id: 1 }] }),
   },

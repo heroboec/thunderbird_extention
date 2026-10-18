@@ -5,11 +5,16 @@
 // query by subject (Thunderbird already strips "Re:" from it), plus a lookup
 // by Message-ID only for ancestors whose subject was changed.
 
-import { collectList } from "./messages.js";
+import { replaceDomain } from "./anonymize.js";
+import { cached, getCached, setCached } from "./cache.js";
+import { buildThreadText, collectList } from "./messages.js";
 
 // Upper bound on same-subject candidates whose headers are read; protects
 // against very common subjects.
 const MAX_CANDIDATES = 300;
+
+// How long a Message-ID not found in any folder is not searched again.
+const MISSING_TTL_MS = 24 * 60 * 60 * 1000;
 
 // Message-IDs inside a header value like "<a@x> <b@y>".
 export function parseMessageIds(value) {
@@ -24,14 +29,18 @@ function isTrashOrJunk(message) {
 const key = (message) => message.headerMessageId || `id:${message.id}`;
 
 // Message-IDs this message replies to (References and In-Reply-To).
-async function getParentIds(message) {
-  const { headers } = await browser.messages.getFull(message.id, { decodeContent: false });
-  return [...new Set([...(headers.references ?? []), ...(headers["in-reply-to"] ?? [])].flatMap(parseMessageIds))];
+function getParentIds(message) {
+  return cached("refs", message.headerMessageId, async () => {
+    const { headers } = await browser.messages.getFull(message.id, { decodeContent: false });
+    return [...new Set([...(headers.references ?? []), ...(headers["in-reply-to"] ?? [])].flatMap(parseMessageIds))];
+  });
 }
 
 async function findByMessageId(headerMessageId) {
-  const found = await collectList(browser.messages.query({ headerMessageId }));
-  return found.find((m) => !isTrashOrJunk(m));
+  if (await getCached("missing", headerMessageId, MISSING_TTL_MS)) return undefined;
+  const found = (await collectList(browser.messages.query({ headerMessageId }))).find((m) => !isTrashOrJunk(m));
+  if (!found) await setCached("missing", headerMessageId, true);
+  return found;
 }
 
 // The whole conversation of one message.
@@ -83,4 +92,12 @@ export async function expandThreads(selected) {
     }
   }
   return [...result.values()];
+}
+
+// Text of the whole threads of the selected messages, with the configured
+// domain replaced.
+export async function collectThreadText(selected, domain) {
+  const messages = await expandThreads(selected);
+  const text = messages.length ? replaceDomain(await buildThreadText(messages), domain) : "";
+  return { messages, text };
 }

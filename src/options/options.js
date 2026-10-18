@@ -1,5 +1,5 @@
 import { listModels } from "../lib/api.js";
-import { loadSettings, normalizeBaseUrl, originPattern, saveSettings } from "../lib/settings.js";
+import { loadSettings, normalizeBaseUrl, normalizeDomain, originPattern, saveSettings } from "../lib/settings.js";
 
 const form = document.getElementById("settings");
 const fields = {
@@ -19,7 +19,7 @@ function showStatus(text, kind = "") {
 // Reads the form; throws with a user-facing message on invalid input.
 function readForm() {
   return {
-    domain: fields.domain.value.trim(),
+    domain: normalizeDomain(fields.domain.value),
     baseUrl: normalizeBaseUrl(fields.baseUrl.value),
     apiKey: fields.apiKey.value.trim(),
     model: fields.model.value.trim(),
@@ -43,6 +43,7 @@ async function save(event) {
   }
   const granted = await requestHostPermission(settings.baseUrl);
   await saveSettings(settings);
+  fields.domain.value = settings.domain;
   fields.baseUrl.value = settings.baseUrl;
   showStatus(
     granted ? "Сохранено" : "Сохранено, но без доступа к серверу запросы к API работать не будут",
