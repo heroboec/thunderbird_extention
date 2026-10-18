@@ -2,15 +2,16 @@
 <html lang="ru">
 <head>
   <meta charset="utf-8">
-  <title>Текст писем</title>
+  <title>Анализ писем</title>
   <link rel="stylesheet" href="viewer.css">
+  <script src="../display/render.js"></script>
   <script type="module" src="viewer.js"></script>
 </head>
 <body>
   <header>
     <span id="summary">Загрузка…</span>
-    <button type="button" id="copy">Копировать</button>
+    <button type="button" id="analyze" hidden>Проанализировать</button>
   </header>
-  <pre id="text"></pre>
+  <main id="threads"></main>
 </body>
 </html>

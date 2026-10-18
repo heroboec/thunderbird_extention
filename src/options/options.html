@@ -33,6 +33,10 @@
     <datalist id="models"></datalist>
     <p class="hint">Нажмите «Проверить подключение», чтобы подгрузить список доступных моделей, затем выберите модель в этом поле.</p>
 
+    <label for="searchDays">Искать письма цепочки за последние, дней</label>
+    <input id="searchDays" name="searchDays" type="number" min="7" max="3650" step="1">
+    <p class="hint">Чем меньше срок, тем быстрее первый поиск цепочки. Поиск идёт только в учётной записи письма; уже найденные цепочки берутся из памяти.</p>
+
     <label class="check">
       <input id="autoAnalyze" type="checkbox">
       Анализировать автоматически при открытии письма

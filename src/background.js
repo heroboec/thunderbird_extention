@@ -1,8 +1,8 @@
-import { analyzeThread, PROMPT_VERSION } from "./lib/analyze.js";
-import { getCached, pruneCache, setCached } from "./lib/cache.js";
+import { getAnalysis } from "./lib/analyze.js";
+import { pruneCache } from "./lib/cache.js";
 import { collectList } from "./lib/messages.js";
-import { loadSettings, originPattern } from "./lib/settings.js";
-import { collectThreadText, getOurEmails } from "./lib/thread.js";
+import { loadSettings } from "./lib/settings.js";
+import { addToThreads, clientEmails, collectThreads, getOurEmails, makeSideOf, threadText } from "./lib/thread.js";
 
 // Thunderbird found a newer version via update_url. By default it would wait
 // for a restart; reloading applies the update right away.
@@ -17,7 +17,7 @@ const THREAD_BLOCK_SCRIPT_ID = "thread-block";
 browser.runtime.onInstalled.addListener(() => {
   browser.menus.create({
     id: VIEWER_MENU_ID,
-    title: "Показать текст писем",
+    title: "Анализ выделенных писем",
     contexts: ["message_list"],
   });
 });
@@ -28,53 +28,46 @@ async function registerThreadBlock() {
   const registered = await browser.scripting.messageDisplay.getRegisteredScripts({ ids: [THREAD_BLOCK_SCRIPT_ID] });
   if (registered.length) return;
   await browser.scripting.messageDisplay.registerScripts([
-    { id: THREAD_BLOCK_SCRIPT_ID, js: ["display/thread-block.js"] },
+    { id: THREAD_BLOCK_SCRIPT_ID, js: ["display/render.js", "display/thread-block.js"] },
   ]);
 }
 registerThreadBlock();
 pruneCache();
 
-// Thread text for the message shown in the tab the request came from.
-async function threadTextForTab(tabId) {
+// Keep remembered threads current: new mail in any folder and our own sent
+// replies join the threads they answer.
+async function addAllToThreads(messages) {
+  for (const message of messages) {
+    await addToThreads(message).catch((e) => console.error("addToThreads failed", e));
+  }
+}
+browser.messages.onNewMailReceived.addListener(
+  async (folder, messageList) => addAllToThreads(await collectList(messageList)),
+  true,
+);
+browser.compose.onAfterSend.addListener((tab, sendInfo) => addAllToThreads(sendInfo.messages ?? []));
+
+// Thread of the message shown in the tab the request came from.
+async function threadForTab(tabId, force) {
   const displayed = await collectList(browser.messageDisplay.getDisplayedMessages(tabId));
-  const { domain, autoAnalyze } = await loadSettings();
-  const { messages, text } = await collectThreadText(displayed, { domain, ourEmails: await getOurEmails() });
-  return { count: messages.length, text, autoAnalyze };
-}
-
-async function sha256(text) {
-  const digest = await crypto.subtle.digest("SHA-256", new TextEncoder().encode(text));
-  return [...new Uint8Array(digest)].map((b) => b.toString(16).padStart(2, "0")).join("");
-}
-
-// Model analysis of a thread text. The same text with the same model and
-// prompt is answered from the cache unless force is set, so reopening an
-// unchanged thread costs nothing.
-async function analysisFor(text, force) {
   const settings = await loadSettings();
-  if (!settings.apiKey || !settings.model) {
-    throw new Error("Не заданы API-ключ или модель — откройте настройки расширения");
-  }
-  if (!(await browser.permissions.contains({ origins: [originPattern(settings.baseUrl)] }))) {
-    throw new Error("Нет доступа к серверу API — откройте настройки расширения и нажмите «Сохранить»");
-  }
-  const key = await sha256(`${PROMPT_VERSION}\n${settings.baseUrl}\n${settings.model}\n${text}`);
-  if (!force) {
-    const hit = await getCached("analysis", key);
-    if (hit) return { ...hit, fromCache: true };
-  }
-  const analysis = await analyzeThread(settings, text);
-  await setCached("analysis", key, analysis);
-  return analysis;
+  const ourEmails = await getOurEmails();
+  const [records = []] = await collectThreads(displayed.slice(0, 1), { force, searchDays: settings.searchDays });
+  return {
+    count: records.length,
+    text: records.length ? await threadText(records, { domain: settings.domain, ourEmails }) : "",
+    clientEmails: clientEmails(records, makeSideOf(settings.domain, ourEmails)),
+    autoAnalyze: settings.autoAnalyze,
+  };
 }
 
-browser.runtime.onMessage.addListener((request, sender) => {
-  if (request?.type === "getThreadText") return threadTextForTab(sender.tab.id);
-  if (request?.type === "analyzeThread") return analysisFor(request.text, request.force);
+browser.runtime.onMessage.addListener(async (request, sender) => {
+  if (request?.type === "getThread") return threadForTab(sender.tab.id, request.force);
+  if (request?.type === "analyzeThread") return getAnalysis(await loadSettings(), request.text, { force: request.force });
 });
 
-// Opens the debug window with the text of selected messages, or focuses it
-// if already open.
+// Opens the analysis window for selected messages, or focuses it if
+// already open.
 async function openViewer(tabId) {
   const { viewerWindowId } = await browser.storage.session.get("viewerWindowId");
   if (viewerWindowId) {
@@ -88,8 +81,8 @@ async function openViewer(tabId) {
   const window = await browser.windows.create({
     url: `viewer/viewer.html?tabId=${tabId}`,
     type: "popup",
-    width: 800,
-    height: 700,
+    width: 900,
+    height: 800,
   });
   await browser.storage.session.set({ viewerWindowId: window.id });
 }

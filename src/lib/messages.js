@@ -36,13 +36,16 @@ function formatDate(date) {
   return new Date(date).toLocaleString("ru-RU", { dateStyle: "short", timeStyle: "short" });
 }
 
-// All messages as one text, oldest first, each with a short header.
-// sideOf(author) returns "мы", "клиент" or null to mark who wrote a message.
-export async function buildThreadText(messages, sideOf = () => null) {
-  const sorted = [...messages].sort((a, b) => new Date(a.date) - new Date(b.date));
+// Thread records (see toRecord in thread.js) as one text, oldest first,
+// each with a short header. sideOf(author) returns "мы", "клиент" or null
+// to mark who wrote a message.
+export async function buildThreadText(records, sideOf = () => null) {
+  const sorted = [...records].sort((a, b) => new Date(a.date) - new Date(b.date));
   // A headers-only message has no full body to cache yet.
   const bodies = await Promise.all(
-    sorted.map((m) => cached("body", m.headersOnly ? null : m.headerMessageId, () => getMessageText(m.id))),
+    sorted.map((r) =>
+      cached("body", r.headersOnly ? null : r.mid, () => getMessageText(r.id)),
+    ),
   );
   return sorted
     .map((m, i) =>

@@ -10,6 +10,7 @@ const fields = {
   model: document.getElementById("model"),
 };
 const autoAnalyze = document.getElementById("autoAnalyze");
+const searchDays = document.getElementById("searchDays");
 const modelList = document.getElementById("models");
 const preset = document.getElementById("preset");
 
@@ -31,6 +32,14 @@ function showStatus(text, kind = "") {
   status.className = kind;
 }
 
+function readSearchDays() {
+  const days = Number(searchDays.value);
+  if (!Number.isInteger(days) || days < 7 || days > 3650) {
+    throw new Error("Срок поиска — целое число дней от 7 до 3650");
+  }
+  return days;
+}
+
 // Reads the form; throws with a user-facing message on invalid input.
 function readForm() {
   return {
@@ -39,6 +48,7 @@ function readForm() {
     apiKey: fields.apiKey.value.trim(),
     model: fields.model.value.trim(),
     autoAnalyze: autoAnalyze.checked,
+    searchDays: readSearchDays(),
   };
 }
 
@@ -113,4 +123,5 @@ for (const [name, input] of Object.entries(fields)) {
   input.value = settings[name];
 }
 autoAnalyze.checked = settings.autoAnalyze;
+searchDays.value = settings.searchDays;
 syncPreset();

@@ -9,6 +9,7 @@ export const DEFAULTS = {
   apiKey: "",
   model: "",
   autoAnalyze: true,
+  searchDays: 90,
 };
 
 export async function loadSettings() {

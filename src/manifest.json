@@ -14,7 +14,8 @@
     "messagesRead",
     "accountsRead",
     "menus",
-    "scripting"
+    "scripting",
+    "compose"
   ],
   "optional_host_permissions": [
     "*://*/*"
@@ -26,7 +27,7 @@
     "type": "module"
   },
   "action": {
-    "default_title": "Текст писем",
+    "default_title": "Анализ писем",
     "default_icon": "icons/icon.svg"
   },
   "options_ui": {
