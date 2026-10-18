@@ -1,0 +1,15 @@
+{
+  "manifest_version": 3,
+  "name": "My Thunderbird Extension",
+  "version": "0.1.0",
+  "description": "Thunderbird extension with auto-update from GitHub Releases",
+  "browser_specific_settings": {
+    "gecko": {
+      "id": "tb-extension@heroboec",
+      "strict_min_version": "128.0"
+    }
+  },
+  "background": {
+    "scripts": ["background.js"]
+  }
+}
