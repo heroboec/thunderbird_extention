@@ -9,10 +9,22 @@
       "strict_min_version": "128.0"
     }
   },
-  "permissions": ["storage"],
-  "optional_host_permissions": ["*://*/*"],
+  "permissions": [
+    "storage",
+    "messagesRead",
+    "menus"
+  ],
+  "optional_host_permissions": [
+    "*://*/*"
+  ],
   "background": {
-    "scripts": ["background.js"]
+    "scripts": [
+      "background.js"
+    ]
+  },
+  "action": {
+    "default_title": "Текст писем",
+    "default_icon": "icons/icon.svg"
   },
   "options_ui": {
     "page": "options/options.html",
