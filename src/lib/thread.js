@@ -94,10 +94,33 @@ export async function expandThreads(selected) {
   return [...result.values()];
 }
 
-// Text of the whole threads of the selected messages, with the configured
-// domain replaced.
-export async function collectThreadText(selected, domain) {
+// Email address from an author like "Name <a@x.ru>".
+export function emailOf(author) {
+  return (author.match(/<([^<>]+)>/)?.[1] ?? author).trim().toLowerCase();
+}
+
+// Who wrote a message: "мы" for our own addresses and the configured domain
+// (with subdomains), "клиент" for everyone else.
+export function makeSideOf(domain, ourEmails) {
+  return (author) => {
+    const email = emailOf(author);
+    const ours = ourEmails.has(email) || (domain && (email.endsWith(`@${domain}`) || email.endsWith(`.${domain}`)));
+    return ours ? "мы" : "клиент";
+  };
+}
+
+// Text of the whole threads of the selected messages, with authors marked
+// as us or the client, and the configured domain replaced.
+export async function collectThreadText(selected, { domain, ourEmails }) {
   const messages = await expandThreads(selected);
-  const text = messages.length ? replaceDomain(await buildThreadText(messages), domain) : "";
+  const text = messages.length
+    ? replaceDomain(await buildThreadText(messages, makeSideOf(domain, ourEmails)), domain)
+    : "";
   return { messages, text };
+}
+
+// Email addresses of all identities of the configured mail accounts.
+export async function getOurEmails() {
+  const accounts = await browser.accounts.list(false);
+  return new Set(accounts.flatMap((a) => a.identities ?? []).map((i) => i.email.toLowerCase()));
 }

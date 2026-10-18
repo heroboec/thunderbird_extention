@@ -8,6 +8,7 @@ export const DEFAULTS = {
   baseUrl: PRESETS[0].baseUrl,
   apiKey: "",
   model: "",
+  autoAnalyze: true,
 };
 
 export async function loadSettings() {

@@ -60,3 +60,15 @@ select {
 #status.error {
   color: #cf222e;
 }
+
+label.check {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-weight: normal;
+  margin-top: 16px;
+}
+
+label.check input {
+  width: auto;
+}

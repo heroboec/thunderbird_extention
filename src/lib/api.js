@@ -21,3 +21,14 @@ export async function listModels(settings) {
   const data = await request(settings, "/models");
   return (data.data ?? []).map((m) => m.id).sort();
 }
+
+// Chat completion; returns the text of the first choice.
+export async function chatCompletion(settings, body) {
+  const data = await request(settings, "/chat/completions", {
+    method: "POST",
+    body: JSON.stringify({ model: settings.model, ...body }),
+  });
+  const content = data.choices?.[0]?.message?.content;
+  if (!content) throw new Error("Пустой ответ нейросети");
+  return content;
+}

@@ -2,7 +2,7 @@
 // tab and follows selection changes.
 import { getSelectedMessages } from "../lib/messages.js";
 import { loadSettings } from "../lib/settings.js";
-import { collectThreadText } from "../lib/thread.js";
+import { collectThreadText, getOurEmails } from "../lib/thread.js";
 
 const summary = document.getElementById("summary");
 const output = document.getElementById("text");
@@ -20,7 +20,7 @@ async function render(tabId) {
     if (id !== renderId) return;
     if (selected.length) summary.textContent = "Собираю цепочку…";
     const { domain } = await loadSettings();
-    const { messages, text } = await collectThreadText(selected, domain);
+    const { messages, text } = await collectThreadText(selected, { domain, ourEmails: await getOurEmails() });
     if (id !== renderId) return;
     output.textContent = text;
     summary.textContent = messages.length

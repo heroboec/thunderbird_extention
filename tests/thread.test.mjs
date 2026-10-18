@@ -1,6 +1,6 @@
 import assert from "node:assert/strict";
 import { beforeEach, test } from "node:test";
-import { collectThreadText, expandThreads, parseMessageIds } from "../src/lib/thread.js";
+import { collectThreadText, emailOf, expandThreads, makeSideOf, parseMessageIds } from "../src/lib/thread.js";
 import { fakeStorage } from "./fake-storage.mjs";
 
 // Fake mailbox: id, Message-ID, subject, parent Message-IDs, folder.
@@ -90,26 +90,28 @@ test("several selected messages of one thread give no duplicates", async () => {
   assert.deepEqual(ids(await expandThreads(selected)), [1, 2, 3, 4, 5]);
 });
 
+const NO_SETTINGS = { domain: "", ourEmails: new Set() };
+
 const withDates = () => mailbox.forEach((m) => Object.assign(m, { date: `2026-10-0${m.id}T10:00:00Z`, author: "a@company.ru", recipients: [] }));
 
 test("second collection reuses cached headers and bodies", async () => {
   withDates();
   const selected = [header(mailbox[0])];
-  const first = await collectThreadText(selected, "");
+  const first = await collectThreadText(selected, NO_SETTINGS);
   assert.equal(calls.getFull, 5); // selected + 4 same-subject candidates
   assert.equal(calls.body, 4);
   calls = { getFull: 0, body: 0, query: 0 };
-  const second = await collectThreadText(selected, "");
+  const second = await collectThreadText(selected, NO_SETTINGS);
   assert.equal(second.text, first.text);
   assert.deepEqual([calls.getFull, calls.body], [0, 0]);
 });
 
 test("new reply joins the thread and only it is read", async () => {
   withDates();
-  await collectThreadText([header(mailbox[0])], "");
+  await collectThreadText([header(mailbox[0])], NO_SETTINGS);
   mailbox.push(Object.assign(msg(8, "f@x", "Проект", ["a@x", "d@x"], sent), { date: "2026-10-09T10:00:00Z", author: "me@company.ru", recipients: [] }));
   calls = { getFull: 0, body: 0, query: 0 };
-  const { messages } = await collectThreadText([header(mailbox[0])], "");
+  const { messages } = await collectThreadText([header(mailbox[0])], NO_SETTINGS);
   assert.deepEqual(ids(messages), [1, 2, 3, 4, 8]);
   assert.deepEqual([calls.getFull, calls.body], [1, 1]);
 });
@@ -124,8 +126,22 @@ test("missing ancestor is not searched again", async () => {
 
 test("configured domain is replaced in collected text", async () => {
   withDates();
-  const { text } = await collectThreadText([header(mailbox[0])], "company.ru");
+  const { text } = await collectThreadText([header(mailbox[0])], { domain: "company.ru", ourEmails: new Set() });
   assert.doesNotMatch(text, /company\.ru/);
-  assert.match(text, /От: a@example\.com/);
+  assert.match(text, /От: a@example\.com \[мы\]/);
   assert.match(text, /текст 1 от user@example\.com/);
+});
+
+test("emailOf extracts address", () => {
+  assert.equal(emailOf("Иван <Ivan@Company.ru>"), "ivan@company.ru");
+  assert.equal(emailOf("a@b.ru"), "a@b.ru");
+});
+
+test("sideOf marks our identities and domain as us", () => {
+  const sideOf = makeSideOf("company.ru", new Set(["me@gmail.com"]));
+  assert.equal(sideOf("Me <me@gmail.com>"), "мы");
+  assert.equal(sideOf("support@company.ru"), "мы");
+  assert.equal(sideOf("x@mail.company.ru"), "мы");
+  assert.equal(sideOf("client@mycompany.ru"), "клиент");
+  assert.equal(makeSideOf("", new Set())("a@company.ru"), "клиент");
 });

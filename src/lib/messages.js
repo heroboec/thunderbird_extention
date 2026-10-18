@@ -37,7 +37,8 @@ function formatDate(date) {
 }
 
 // All messages as one text, oldest first, each with a short header.
-export async function buildThreadText(messages) {
+// sideOf(author) returns "мы", "клиент" or null to mark who wrote a message.
+export async function buildThreadText(messages, sideOf = () => null) {
   const sorted = [...messages].sort((a, b) => new Date(a.date) - new Date(b.date));
   // A headers-only message has no full body to cache yet.
   const bodies = await Promise.all(
@@ -48,7 +49,7 @@ export async function buildThreadText(messages) {
       [
         `=== Письмо ${i + 1}/${sorted.length} ===`,
         `Дата: ${formatDate(m.date)}`,
-        `От: ${m.author}`,
+        `От: ${m.author}${sideOf(m.author) ? ` [${sideOf(m.author)}]` : ""}`,
         `Кому: ${m.recipients.join(", ")}`,
         `Тема: ${m.subject}`,
         "",

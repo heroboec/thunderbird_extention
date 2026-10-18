@@ -9,6 +9,7 @@ const fields = {
   apiKey: document.getElementById("apiKey"),
   model: document.getElementById("model"),
 };
+const autoAnalyze = document.getElementById("autoAnalyze");
 const modelList = document.getElementById("models");
 const preset = document.getElementById("preset");
 
@@ -37,6 +38,7 @@ function readForm() {
     baseUrl: normalizeBaseUrl(fields.baseUrl.value),
     apiKey: fields.apiKey.value.trim(),
     model: fields.model.value.trim(),
+    autoAnalyze: autoAnalyze.checked,
   };
 }
 
@@ -110,4 +112,5 @@ const settings = await loadSettings();
 for (const [name, input] of Object.entries(fields)) {
   input.value = settings[name];
 }
+autoAnalyze.checked = settings.autoAnalyze;
 syncPreset();

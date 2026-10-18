@@ -33,6 +33,12 @@
     <datalist id="models"></datalist>
     <p class="hint">Нажмите «Проверить подключение», чтобы подгрузить список доступных моделей, затем выберите модель в этом поле.</p>
 
+    <label class="check">
+      <input id="autoAnalyze" type="checkbox">
+      Анализировать автоматически при открытии письма
+    </label>
+    <p class="hint">Повторно открытая цепочка без новых писем не отправляется в нейросеть: анализ берётся из памяти.</p>
+
     <div class="actions">
       <button type="submit">Сохранить</button>
       <button type="button" id="test">Проверить подключение</button>

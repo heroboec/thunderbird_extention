@@ -1,7 +1,8 @@
-import { pruneCache } from "./lib/cache.js";
+import { analyzeThread, PROMPT_VERSION } from "./lib/analyze.js";
+import { getCached, pruneCache, setCached } from "./lib/cache.js";
 import { collectList } from "./lib/messages.js";
-import { loadSettings } from "./lib/settings.js";
-import { collectThreadText } from "./lib/thread.js";
+import { loadSettings, originPattern } from "./lib/settings.js";
+import { collectThreadText, getOurEmails } from "./lib/thread.js";
 
 // Thunderbird found a newer version via update_url. By default it would wait
 // for a restart; reloading applies the update right away.
@@ -36,13 +37,40 @@ pruneCache();
 // Thread text for the message shown in the tab the request came from.
 async function threadTextForTab(tabId) {
   const displayed = await collectList(browser.messageDisplay.getDisplayedMessages(tabId));
-  const { domain } = await loadSettings();
-  const { messages, text } = await collectThreadText(displayed, domain);
-  return { count: messages.length, text };
+  const { domain, autoAnalyze } = await loadSettings();
+  const { messages, text } = await collectThreadText(displayed, { domain, ourEmails: await getOurEmails() });
+  return { count: messages.length, text, autoAnalyze };
+}
+
+async function sha256(text) {
+  const digest = await crypto.subtle.digest("SHA-256", new TextEncoder().encode(text));
+  return [...new Uint8Array(digest)].map((b) => b.toString(16).padStart(2, "0")).join("");
+}
+
+// Model analysis of a thread text. The same text with the same model and
+// prompt is answered from the cache unless force is set, so reopening an
+// unchanged thread costs nothing.
+async function analysisFor(text, force) {
+  const settings = await loadSettings();
+  if (!settings.apiKey || !settings.model) {
+    throw new Error("Не заданы API-ключ или модель — откройте настройки расширения");
+  }
+  if (!(await browser.permissions.contains({ origins: [originPattern(settings.baseUrl)] }))) {
+    throw new Error("Нет доступа к серверу API — откройте настройки расширения и нажмите «Сохранить»");
+  }
+  const key = await sha256(`${PROMPT_VERSION}\n${settings.baseUrl}\n${settings.model}\n${text}`);
+  if (!force) {
+    const hit = await getCached("analysis", key);
+    if (hit) return { ...hit, fromCache: true };
+  }
+  const analysis = await analyzeThread(settings, text);
+  await setCached("analysis", key, analysis);
+  return analysis;
 }
 
 browser.runtime.onMessage.addListener((request, sender) => {
   if (request?.type === "getThreadText") return threadTextForTab(sender.tab.id);
+  if (request?.type === "analyzeThread") return analysisFor(request.text, request.force);
 });
 
 // Opens the debug window with the text of selected messages, or focuses it
